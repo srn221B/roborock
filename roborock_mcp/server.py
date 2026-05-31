@@ -139,6 +139,28 @@ async def start_cleaning(device_index: int = 0) -> str:
 
 
 @mcp.tool()
+async def pause_cleaning(device_index: int = 0) -> str:
+    """
+    Roborock掃除機の掃除を一時停止します。
+
+    Args:
+        device_index: デバイスのインデックス（複数台ある場合。デフォルト0）
+    """
+    try:
+        device = await get_vacuum_device(device_index)
+        await device.v1_properties.command.send(RoborockCommand.APP_STOP)
+        device_name = getattr(device, "name", f"Device {device_index}")
+        return f"✅ {device_name} の掃除を停止しました。"
+
+    except FileNotFoundError as e:
+        return f"❌ 認証エラー: {e}"
+    except ValueError as e:
+        return f"❌ {e}"
+    except Exception as e:
+        return f"❌ エラー: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
 async def stop_cleaning(device_index: int = 0) -> str:
     """
     Roborock掃除機の掃除を終了します。
@@ -148,7 +170,7 @@ async def stop_cleaning(device_index: int = 0) -> str:
     """
     try:
         device = await get_vacuum_device(device_index)
-        await device.v1_properties.command.send(RoborockCommand.APP_STOP)
+        await device.v1_properties.command.send(RoborockCommand.APP_CHARGE)
         device_name = getattr(device, "name", f"Device {device_index}")
         return f"✅ {device_name} の掃除を終了しました。"
 
