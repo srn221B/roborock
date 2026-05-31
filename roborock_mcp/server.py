@@ -11,6 +11,7 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
+from roborock import RoborockCommand
 from roborock.devices.device_manager import create_device_manager, UserParams
 from roborock.data.containers import UserData
 
@@ -103,6 +104,40 @@ async def get_roborock_status(device_index: int = 0) -> str:
                 lines.append(f"  {k}: {v}")
 
         return "\n".join(lines)
+
+    except FileNotFoundError as e:
+        return f"❌ 認証エラー: {e}"
+    except Exception as e:
+        return f"❌ エラー: {type(e).__name__}: {e}"
+
+
+@mcp.tool()
+async def start_cleaning(device_index: int = 0) -> str:
+    """
+    Roborock掃除機の掃除を開始します。
+
+    Args:
+        device_index: デバイスのインデックス（複数台ある場合。デフォルト0）
+    """
+    try:
+        device_manager = await get_device_manager()
+        devices = await device_manager.get_devices()
+        vacuum_devices = [d for d in devices if d.v1_properties]
+
+        if not vacuum_devices:
+            return "掃除機デバイスが見つかりませんでした。"
+
+        if device_index >= len(vacuum_devices):
+            return (
+                f"デバイスインデックス {device_index} は範囲外です。"
+                f"見つかったデバイス数: {len(vacuum_devices)}"
+            )
+
+        device = vacuum_devices[device_index]
+        await device.v1_properties.command.send(RoborockCommand.APP_START)
+
+        device_name = getattr(device, "name", f"Device {device_index}")
+        return f"✅ {device_name} の掃除を開始しました。"
 
     except FileNotFoundError as e:
         return f"❌ 認証エラー: {e}"
