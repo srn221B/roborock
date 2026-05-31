@@ -37,6 +37,23 @@ async def get_device_manager():
     return await create_device_manager(user_params)
 
 
+async def get_vacuum_device(device_index: int = 0):
+    device_manager = await get_device_manager()
+    devices = await device_manager.get_devices()
+    vacuum_devices = [d for d in devices if d.v1_properties]
+
+    if not vacuum_devices:
+        raise ValueError("掃除機デバイスが見つかりませんでした。")
+
+    if device_index >= len(vacuum_devices):
+        raise ValueError(
+            f"デバイスインデックス {device_index} は範囲外です。"
+            f"見つかったデバイス数: {len(vacuum_devices)}"
+        )
+
+    return vacuum_devices[device_index]
+
+
 @mcp.tool()
 async def get_roborock_status(device_index: int = 0) -> str:
     """
@@ -47,21 +64,7 @@ async def get_roborock_status(device_index: int = 0) -> str:
         device_index: デバイスのインデックス（複数台ある場合。デフォルト0）
     """
     try:
-        device_manager = await get_device_manager()
-        devices = await device_manager.get_devices()
-
-        vacuum_devices = [d for d in devices if d.v1_properties]
-
-        if not vacuum_devices:
-            return "掃除機デバイスが見つかりませんでした。"
-
-        if device_index >= len(vacuum_devices):
-            return (
-                f"デバイスインデックス {device_index} は範囲外です。"
-                f"見つかったデバイス数: {len(vacuum_devices)}"
-            )
-
-        device = vacuum_devices[device_index]
+        device = await get_vacuum_device(device_index)
         status_trait = device.v1_properties.status
         await status_trait.refresh()
 
@@ -107,6 +110,8 @@ async def get_roborock_status(device_index: int = 0) -> str:
 
     except FileNotFoundError as e:
         return f"❌ 認証エラー: {e}"
+    except ValueError as e:
+        return f"❌ {e}"
     except Exception as e:
         return f"❌ エラー: {type(e).__name__}: {e}"
 
@@ -120,27 +125,15 @@ async def start_cleaning(device_index: int = 0) -> str:
         device_index: デバイスのインデックス（複数台ある場合。デフォルト0）
     """
     try:
-        device_manager = await get_device_manager()
-        devices = await device_manager.get_devices()
-        vacuum_devices = [d for d in devices if d.v1_properties]
-
-        if not vacuum_devices:
-            return "掃除機デバイスが見つかりませんでした。"
-
-        if device_index >= len(vacuum_devices):
-            return (
-                f"デバイスインデックス {device_index} は範囲外です。"
-                f"見つかったデバイス数: {len(vacuum_devices)}"
-            )
-
-        device = vacuum_devices[device_index]
+        device = await get_vacuum_device(device_index)
         await device.v1_properties.command.send(RoborockCommand.APP_START)
-
         device_name = getattr(device, "name", f"Device {device_index}")
         return f"✅ {device_name} の掃除を開始しました。"
 
     except FileNotFoundError as e:
         return f"❌ 認証エラー: {e}"
+    except ValueError as e:
+        return f"❌ {e}"
     except Exception as e:
         return f"❌ エラー: {type(e).__name__}: {e}"
 
@@ -154,27 +147,15 @@ async def stop_cleaning(device_index: int = 0) -> str:
         device_index: デバイスのインデックス（複数台ある場合。デフォルト0）
     """
     try:
-        device_manager = await get_device_manager()
-        devices = await device_manager.get_devices()
-        vacuum_devices = [d for d in devices if d.v1_properties]
-
-        if not vacuum_devices:
-            return "掃除機デバイスが見つかりませんでした。"
-
-        if device_index >= len(vacuum_devices):
-            return (
-                f"デバイスインデックス {device_index} は範囲外です。"
-                f"見つかったデバイス数: {len(vacuum_devices)}"
-            )
-
-        device = vacuum_devices[device_index]
+        device = await get_vacuum_device(device_index)
         await device.v1_properties.command.send(RoborockCommand.APP_STOP)
-
         device_name = getattr(device, "name", f"Device {device_index}")
         return f"✅ {device_name} の掃除を終了しました。"
 
     except FileNotFoundError as e:
         return f"❌ 認証エラー: {e}"
+    except ValueError as e:
+        return f"❌ {e}"
     except Exception as e:
         return f"❌ エラー: {type(e).__name__}: {e}"
 
