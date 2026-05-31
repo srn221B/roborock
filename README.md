@@ -62,6 +62,9 @@ claude
 | ツール名 | 説明 |
 |---|---|
 | `get_roborock_status` | バッテリー残量・掃除状態などを取得 |
+| `start_cleaning` | 掃除を開始する |
+| `pause_cleaning` | 掃除を一時停止する |
+| `stop_cleaning` | 掃除を終了する（充電台に戻る） |
 
 ## 新しいツールの追加
 
